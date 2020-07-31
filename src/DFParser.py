@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 
+import argparse
 import numpy as np
 import pandas as pd
+
 
 
 class MessageFormat(object):
@@ -227,12 +229,20 @@ class DFLog(object):
     
 
 if __name__ == "__main__":
-    infile1 = "test/craft.log"
-    infile2 = "test/BARO_DATA_20200619T093332.log"
-    outfile = "test/craft_dup.log"
-    log = DFLog(infile1)
-    log.merge(DFLog(infile2), drop_tables=['GPS'])
-    log.output_log(outfile)
+
+    # Takes a list of files and a list of tables to drop from incoming files
+    parser = argparse.ArgumentParser()
+    parser.add_argument("output", help="The new log file to output into")
+    parser.add_argument("base", help="The primary file to merge into")
+    parser.add_argument("files", help="Paths of files to merge", nargs="+")
+    parser.add_argument('-d', '--drop', help='The names of fields to drop from incoming files', nargs='*')
+    args = parser.parse_args()
+
+    
+    log = DFLog(args.base)
+    for f in args.files:
+        log.merge(DFLog(f), drop_tables=args.drop)
+    log.output_log(args.output)
 
 
 
