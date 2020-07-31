@@ -223,12 +223,13 @@ if __name__ == "__main__":
     parser.add_argument("base", help="The primary file to merge into")
     parser.add_argument("files", help="Paths of files to merge", nargs="+")
     parser.add_argument('-d', '--drop', help='The names of fields to drop from incoming files', nargs='*')
+    parser.add_argument('-t', '--time_shift', help='Number of milliseconds to shift incoming files by', type=int)
     args = parser.parse_args()
 
     
     log = DFLog(args.base)
     for f in args.files:
-        log.merge(DFLog(f), drop_tables=args.drop)
+        log.merge(DFLog(f), drop_tables=args.drop, time_shift=args.time_shift)
     log.output_log(args.output)
 
 
