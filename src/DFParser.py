@@ -152,14 +152,11 @@ class DFLog(object):
                 outfile.write(self._row_to_string(message[1], row_indexes[message[1]]))
                 row_indexes[message[1]] += 1
 
-    def merge(self, other, collision_behavior='rename', drop_tables=None):
+    def merge(self, other, drop_tables=None, time_shift=0):
         """Merges a DFParser object into this object. Has side effects on other
 
         Args:
             other (DFParser): The log data to add
-            collision_behavior (str, optional): How to handle name collisions. Defaults to 'first'.
-                Available Options:
-                    'first' : Keep only conflicting tables in self
             drop_tables (list<str>, optional) : Names of tables to not include in the merge. Defaults to None
         """        
         # find collisions
@@ -174,22 +171,7 @@ class DFLog(object):
                            
         collisions = [x for x in merge_names if x in self.tables ]
 
-        # Drop Dups
-        # if collision_behavior == 'first':
-        #     # Merge the _formats
-        #     self._formats = {**{name: other._formats[name] for name in merge_names 
-        #                           if name not in collisions}, 
-        #                      **self._formats}
-
-        #     # Merge tables['FMT']
-        #     self.tables['FMT'] = pd.concat([self.tables['FMT'], 
-        #                                     other.tables['FMT']]).drop_duplicates('Name').reset_index(drop=True)
-        #     # Add remaining tables in other to tables
-        #     self.tables={**{name: other.tables[name] for name in merge_names
-        #                     if name not in collisions},
-        #                  **self.tables}
-
-        if collisions and collision_behavior == 'rename':
+        if collisions:
             # We need to rename all of the colliding columns in other, 
             # and change the FMT tables names with new column names
            
