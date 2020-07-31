@@ -25,7 +25,7 @@ class MessageFormat(object):
         'e': float,
         'E': float,
         'L': float,
-        'M': int,
+        'M': str,
         'q': int,
         'Q': int
     }
@@ -36,6 +36,9 @@ class MessageFormat(object):
         self.data_types = [MessageFormat._field_formats[char] for char in data_types]
         self.data_types = {columns[i]: self.data_types[i] for i in range(len(columns))}
         self.columns = columns
+
+    def __str__(self):
+        return "{}, {}, {}, {}".format(self.name, self.id, self.data_types, self.columns)
 
     
 class DFLog(object):
@@ -109,8 +112,7 @@ class DFLog(object):
             col_num = len(format.columns)-1
             data = [row[:col_num] + [", ".join(row[col_num:])] for row in data]
             self.tables[name] = pd.DataFrame(data, columns=format.columns)
-            self.tables[name] = self.tables[name].convert_objects(convert_numeric=True)
-            # self.tables[name].astype(format.data_types)
+            self.tables[name] = self.tables[name].astype(format.data_types)
 
     def _row_to_string(self, name, row):
         """Creates a dataflash string from a row of a table
@@ -122,7 +124,7 @@ class DFLog(object):
         Returns:
             str: A string in the dataflash format with the values of the row
         """        
-        return name+", " + ", ".join(self.tables[name].iloc[row]) + '\n'
+        return name+", " + ", ".join(map(str, self.tables[name].iloc[row])) + '\n'
 
     def output_log(self, filename, timestamp='TimeUS'):
         """Outputs the stored tables as a dataflash log
@@ -168,13 +170,7 @@ class DFLog(object):
             drop_tables = []
         merge_names = [x for x in merge_names if x not in drop_tables and x not in format_table_names]
         
-            
-                           
         collisions = [x for x in merge_names if x in self.tables ]
-
-        if time_shift != 0:
-            for name in other.tables:
-                other.tables[name]['TimeUS'] += time_shift
 
         if collisions:
             # We need to rename all of the colliding columns in other, 
@@ -210,6 +206,7 @@ class DFLog(object):
         
         # and insert the new message dataframes into tables
         for name in [x for x in other.tables if x not in drop_tables and x not in format_table_names]:
+            other.tables[name]['TimeUS'] += time_shift
             self.tables[name] = other.tables[name]
     
 
