@@ -109,6 +109,7 @@ class DFLog(object):
             col_num = len(format.columns)-1
             data = [row[:col_num] + [", ".join(row[col_num:])] for row in data]
             self.tables[name] = pd.DataFrame(data, columns=format.columns)
+            self.tables[name] = self.tables[name].convert_objects(convert_numeric=True)
             # self.tables[name].astype(format.data_types)
 
     def _row_to_string(self, name, row):
@@ -170,6 +171,10 @@ class DFLog(object):
             
                            
         collisions = [x for x in merge_names if x in self.tables ]
+
+        if time_shift != 0:
+            for name in other.tables:
+                other.tables[name]['TimeUS'] += time_shift
 
         if collisions:
             # We need to rename all of the colliding columns in other, 
