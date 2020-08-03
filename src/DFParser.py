@@ -83,15 +83,6 @@ class DFLog(object):
     def _format_tables(self):
         """Creates the FMT dataframe, then uses that dataframe to format the dictionaries
         """
-        # Find the format message for FMT - should be first, so this loop shorts out
-        # fmt_indx = 0
-        # for indx, msg in self._data['FMT']:
-        #     if msg[3] == 'FMT':
-        #         fmt_indx = indx
-        #         break
-        
-        #create the format dictionary
-        # print(self._data['FMT'])
         np_fmt = np.array(self._data['FMT'])
         fmt_names = np_fmt[:, 2]
         fmt_ids = np_fmt[:, 1]
@@ -105,14 +96,11 @@ class DFLog(object):
         # Create DataFrames for each message using format dictionary
         for name in self._data:
             data  = self._data[name]
-            # if name == 'FMT':
-            #     data = np.hstack((np_fmt[:, :5], 
-            #                       [[",".join(x)] for x in np_fmt[:, 5:]]))
             format = self._formats[name]
             col_num = len(format.columns)-1
             data = [row[:col_num] + [", ".join(row[col_num:])] for row in data]
             self.tables[name] = pd.DataFrame(data, columns=format.columns)
-            self.tables[name] = self.tables[name].astype(format.data_types)
+            # self.tables[name] = self.tables[name].astype(format.data_types)
 
     def _row_to_string(self, name, row):
         """Creates a dataflash string from a row of a table
@@ -171,7 +159,7 @@ class DFLog(object):
         merge_names = [x for x in merge_names if x not in drop_tables and x not in format_table_names]
         
         collisions = [x for x in merge_names if x in self.tables ]
-
+        print(collisions)
         if collisions:
             # We need to rename all of the colliding columns in other, 
             # and change the FMT tables names with new column names
@@ -206,7 +194,7 @@ class DFLog(object):
         
         # and insert the new message dataframes into tables
         for name in [x for x in other.tables if x not in drop_tables and x not in format_table_names]:
-            other.tables[name]['TimeUS'] += time_shift
+            other.tables[name]['TimeUS'] = other.tables[name]['TimeUS'].astype(int) + time_shift
             self.tables[name] = other.tables[name]
     
 
