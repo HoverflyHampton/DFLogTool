@@ -35,7 +35,7 @@ class MessageFormat(object):
         self.id = id
         self.data_types = [MessageFormat._field_formats[char] for char in data_types]
         self.data_types = {columns[i]: self.data_types[i] for i in range(len(columns))}
-        self.columns = columns
+        self.columns = ['MSGNAME'] + columns
 
     def __str__(self):
         return "{}, {}, {}, {}".format(self.name, self.id, self.data_types, self.columns)
@@ -65,8 +65,7 @@ class DFLog(object):
         
     
     def _add_row(self, name, data):
-        """Add a new row of data to the appropriate table. If the table does not exist, 
-           create it with temporary column names.
+        """Add a new row of data to the appropriate table.
 
         Args:
             name (str): The name of the table to add
@@ -78,16 +77,16 @@ class DFLog(object):
         # TODO: Add dictionary where each entry is the column name: value  to self.data[name]
         if name == 'FMT':
             data = data[:4] + [",".join(data[4:])]
-        self._data[name].append(data)
+        self._data[name].append([name] + data)
 
     def _format_tables(self):
         """Creates the FMT dataframe, then uses that dataframe to format the dictionaries
         """
         np_fmt = np.array(self._data['FMT'])
-        fmt_names = np_fmt[:, 2]
-        fmt_ids = np_fmt[:, 1]
-        fmt_data_types = np_fmt[:, 3]
-        fmt_cols = np_fmt[:, 4]
+        fmt_names = np_fmt[:, 3]
+        fmt_ids = np_fmt[:, 2]
+        fmt_data_types = np_fmt[:, 4]
+        fmt_cols = np_fmt[:, 5]
         self._formats = {fmt_names[i]: MessageFormat(fmt_names[i], fmt_ids[i],
                                                      fmt_data_types[i], 
                                                      fmt_cols[i].split(','))
@@ -120,28 +119,35 @@ class DFLog(object):
         Args:
             filename (str): The location to save the file
             timestamp (str, optional): The column sort messages on. Defaults to 'TimeUS'.
-        """        
-        with open(filename, 'w') as outfile:
-            # First, write the format messages
-            self.tables['FMT'].to_csv('fmt_table.csv')
-            for fmt_line in [self._row_to_string('FMT', i) for i in 
-                             range(len(self.tables['FMT']))]:
-                outfile.write(fmt_line)
-            
-            # Basic Idea for printing messages in order:
-            # Create dictionary with name: row_index for each name
-            # Create unifed array of tuble (timestamp, name) for all messages
-            # Sort unified array
-            # Pop off array, get message row_index for name, increment row_index of name
-            row_indexes = {name: 0 for name in self.tables}
+        """    
 
-            sortable_array = np.vstack([[(self.tables[name][timestamp].iloc[i], name) 
-                                          for i in range(len(self.tables[name]))]
-                                        for name in self.tables if name != 'FMT' and not self.tables[name].empty])
-            sortable_array = sortable_array[np.argsort(sortable_array[:, 0])]
-            for message in sortable_array:
-                outfile.write(self._row_to_string(message[1], row_indexes[message[1]]))
-                row_indexes[message[1]] += 1
+        with open(filename, 'w') as __:
+            # Clear out the file
+            pass    
+        with open(filename, 'a') as outfile:
+            # First, write the format messages
+            fmt_np = self.tables['FMT'].to_numpy()
+            np.savetxt(outfile, fmt_np, fmt='%s', delimiter=',', newline='\n')
+            
+            # Write the rest of the log, sorted by timestamp
+            numpy_msgs = None
+            for table in self.tables:
+                if table == 'FMT':
+                    continue
+                temp_array = self.tables[table].to_numpy()
+                temp_array = np.hstack([temp_array[:, :1], 
+                                        np.reshape([int(val) for val in temp_array[:, 1]], 
+                                                   (len(temp_array), 1)),
+                                        np.reshape([", ".join([str(x) 
+                                                         for x in row]) 
+                                                    for row in temp_array[:, 2:]],
+                                                    (len(temp_array), 1))])
+                if numpy_msgs is None:
+                    numpy_msgs = temp_array
+                else:
+                    numpy_msgs = np.vstack((numpy_msgs, temp_array))
+            numpy_msgs = numpy_msgs[numpy_msgs[:, 1].argsort()]
+            np.savetxt(outfile, numpy_msgs, fmt='%s', delimiter=', ', newline='\n')
 
     def merge(self, other, drop_tables=None, time_shift=0):
         """Merges a DFParser object into this object. Has side effects on other
@@ -159,7 +165,6 @@ class DFLog(object):
         merge_names = [x for x in merge_names if x not in drop_tables and x not in format_table_names]
         
         collisions = [x for x in merge_names if x in self.tables ]
-        print(collisions)
         if collisions:
             # We need to rename all of the colliding columns in other, 
             # and change the FMT tables names with new column names
