@@ -149,6 +149,18 @@ class DFLog(object):
             numpy_msgs = numpy_msgs[numpy_msgs[:, 1].argsort()]
             np.savetxt(outfile, numpy_msgs, fmt='%s', delimiter=', ', newline='\n')
 
+    def drop_empty(self):
+        """ Drop all tables that have no entries, and removes thier format message
+        """        
+        drop_tables = []
+        for table in self.tables:
+            if self.tables[table].empty:
+                drop_tables.append(table)
+        for val in drop_tables:
+            self.tables.pop(val)
+            drop_idx = self.tables['FMT'][self.tables['FMT']['Type'] == val].index
+            self.tables['FMT'].drop(drop_idx, inplace=True)
+
     def merge(self, other, drop_tables=None, time_shift=0):
         """Merges a DFParser object into this object. Has side effects on other
 
@@ -156,6 +168,10 @@ class DFLog(object):
             other (DFParser): The log data to add
             drop_tables (list<str>, optional) : Names of tables to not include in the merge. Defaults to None
         """        
+        
+        #drop unused tables in other
+        other.drop_empty()
+        
         # find collisions
         format_table_names = {'FMT': 'Name',
                               'UNIT': 'Id', 'MULT': 'Id', 'FMTU': 'FmtType'}
