@@ -218,7 +218,15 @@ class DFLog(object):
             other.tables[name]['TimeUS'] = other.tables[name]['TimeUS'].astype(int) + time_shift
             self.tables[name] = other.tables[name]
     
+    def find_offset(self, other):
+        # Check if self is a craft log, and other has ISP data
+        if 'RCOU' not in self.tables and 'IPS' not in other.tables:
+            return 0 # Can't find an offset, return no offset
 
+        ips_launch = other.tables['IPS'][other.tables['IPS']['mA'].astype(int) > 1500].iloc[0]
+        craft_launch = self.tables['RCOU'][self.tables['RCOU']['C1'].astype(int) > 1500].iloc[0]
+        us_offset = int(craft_launch['TimeUS']) - int(ips_launch['TimeUS'])
+        return us_offset
     
 
 if __name__ == "__main__":
@@ -230,12 +238,17 @@ if __name__ == "__main__":
     parser.add_argument("files", help="Paths of files to merge", nargs="+")
     parser.add_argument('-d', '--drop', help='The names of fields to drop from incoming files', nargs='*')
     parser.add_argument('-t', '--time_shift', help='Number of milliseconds to shift incoming files by', type=int, default=0)
+    parser.add_argument('-a', '--auto_shift', help='Automatically find a time shift value from the firs file', action='store_true')
     args = parser.parse_args()
 
     
     log = DFLog(args.base)
+    ts = args.time_shift
+    if args.auto_shift:
+        ips_log = DFLog(args.files[0])
+        ts += log.find_offset(ips_log)
     for f in args.files:
-        log.merge(DFLog(f), drop_tables=args.drop, time_shift=args.time_shift)
+        log.merge(DFLog(f), drop_tables=args.drop, time_shift=ts)
     log.output_log(args.output)
 
 
