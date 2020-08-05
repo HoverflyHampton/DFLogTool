@@ -229,7 +229,7 @@ if __name__ == "__main__":
     parser.add_argument("base", help="The primary file to merge into")
     parser.add_argument("files", help="Paths of files to merge", nargs="+")
     parser.add_argument('-d', '--drop', help='The names of fields to drop from incoming files', nargs='*')
-    parser.add_argument('-t', '--time_shift', help='Number of milliseconds to shift incoming files by', type=int)
+    parser.add_argument('-t', '--time_shift', help='Number of milliseconds to shift incoming files by', type=int, default=0)
     args = parser.parse_args()
 
     
