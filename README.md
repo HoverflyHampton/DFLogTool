@@ -2,6 +2,11 @@
 ## About  
 This tool is used to merge logs in data flash format. It will sort merged log line on timestamp, automatically resolve name conflicts, and allows targeted column merging and time offsets bnetween files. See the 'examples' section to see how to call it, or pass the -h argument for detailed help  
 
+## Requirements
+- Python 3.5+
+- Pandas 1.0.5+
+- Numpy 1.19.1+
+
 ## Examples
 On Linux, run with `./DFParser.py`. On Windows, call with `python3 DFParser.py`
 #### Basic Merge of Multiple files
