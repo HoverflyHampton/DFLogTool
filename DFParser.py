@@ -235,18 +235,19 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("output", help="The new log file to output into")
     parser.add_argument("base", help="The primary file to merge into")
-    parser.add_argument("files", help="Paths of files to merge", nargs="+")
+    parser.add_argument("-f", "--files", help="Paths of files to merge", nargs="+")
     parser.add_argument('-d', '--drop', help='The names of fields to drop from incoming files', nargs='*')
     parser.add_argument('-t', '--time_shift', help='Number of milliseconds to shift incoming files by', type=int, default=0)
-    parser.add_argument('-a', '--auto_shift', help='Automatically find a time shift value from the firs file', action='store_true')
+    parser.add_argument('-a', '--auto_shift', help='The name of a file to merge with automatic time shifting')
     args = parser.parse_args()
 
     
     log = DFLog(args.base)
     ts = args.time_shift
-    if args.auto_shift:
-        ips_log = DFLog(args.files[0])
+    if args.auto_shift is not None:
+        ips_log = DFLog(args.autoshift)
         ts += log.find_offset(ips_log)
+        log.merge(ips_log, drop_tables=args.drop, time_shift=ts)
     for f in args.files:
         log.merge(DFLog(f), drop_tables=args.drop, time_shift=ts)
     log.output_log(args.output)
