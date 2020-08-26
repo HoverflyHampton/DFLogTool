@@ -245,11 +245,12 @@ if __name__ == "__main__":
     log = DFLog(args.base)
     ts = args.time_shift
     if args.auto_shift is not None:
-        ips_log = DFLog(args.autoshift)
+        ips_log = DFLog(args.auto_shift)
         ts += log.find_offset(ips_log)
         log.merge(ips_log, drop_tables=args.drop, time_shift=ts)
-    for f in args.files:
-        log.merge(DFLog(f), drop_tables=args.drop, time_shift=ts)
+    if args.files is not None:
+        for f in args.files:
+            log.merge(DFLog(f), drop_tables=args.drop, time_shift=ts)
     log.output_log(args.output)
 
 
