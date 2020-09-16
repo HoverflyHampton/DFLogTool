@@ -4,7 +4,7 @@ from kivy.factory import Factory
 from kivy.properties import ObjectProperty, ListProperty
 from kivy.uix.popup import Popup
 
-from DFParser import DFLog
+from log_parser.DFParser import DFLog
 
 import os
 
@@ -94,6 +94,8 @@ Factory.register('Root', cls=Root)
 Factory.register('LoadDialog', cls=LoadDialog)
 Factory.register('SaveDialog', cls=SaveDialog)
 
+def main():
+    Editor().run()
 
 if __name__ == '__main__':
     Editor().run()
