@@ -1,4 +1,4 @@
-from log_parser.log_parse_gui import main
+from log_parser.__main__ import main
 
 if __name__ == "__main__":
     main()
