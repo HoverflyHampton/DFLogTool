@@ -237,7 +237,7 @@ class DFLog(object):
                     numpy_msgs = temp_array
                 else:
                     numpy_msgs = np.vstack((numpy_msgs, temp_array))
-            numpy_msgs = numpy_msgs[numpy_msgs[:, 1].astype(int).argsort()]
+            numpy_msgs = numpy_msgs[numpy_msgs[:, 1].astype(float).argsort()]
             np.savetxt(outfile, numpy_msgs, fmt='%s', delimiter=', ', newline='\n')
 
     def drop_empty(self):

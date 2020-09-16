@@ -53,6 +53,7 @@ class Root(FloatLayout):
     sync = ObjectProperty(None)
     other = ListProperty([])
     savefile = ObjectProperty(None)
+    displayText = ObjectProperty("Select a folder to load files from before saving - no folder currently selected")
     text_input = ObjectProperty(None)
 
     def dismiss_popup(self):
@@ -70,21 +71,29 @@ class Root(FloatLayout):
                             size_hint=(0.9, 0.9))
         self._popup.open()
 
-
     def load(self, path, filename):
+        
         folder = filename[0]
         self.base, self.sync, self.other = loadFolder(folder)
+        print(self.base, self.sync, self.other)
+        self.displayText = "Base: {}\nSync: {}\nOther Files: \n".format(self.base, self.sync)
+        otherText = '             {}\n'*len(self.other)
+        self.displayText += otherText.format(*self.other)
+        print(self.displayText)
         self.dismiss_popup()
 
     def save(self, path, filename):
-        print(path, filename)
+        self.displayText = "Processing..."
+        self.dismiss_popup()
         log = parse(self.base, self.sync, self.other)
         
         if log is not None:
             fh = os.path.join(path, filename)
             log.output_log(fh)
-        self.dismiss_popup()
-
+            self.displayText = "Merged File Saved"
+        else:
+            "Unknown Error : Merge file not saved"
+        
 
 class Editor(App):
     pass
