@@ -1,6 +1,6 @@
 # Data Flash Parser
 ## About  
-This tool is used to merge logs in data flash format. It will sort merged log line on timestamp, automatically resolve name conflicts, and allows targeted column merging and time offsets bnetween files. See the 'examples' section to see how to call it, or pass the -h argument for detailed help  
+This tool is used to merge logs in data flash format. It will sort merged log line on timestamp, automatically resolve name conflicts, and allows targeted column merging and time offsets between files. See the 'examples' section to see how to call it, or pass the -h argument for detailed help  
 
 ## Requirements
 - Python 3.5+
