@@ -116,11 +116,15 @@ class DFLog(object):
         self._format_bin_tables()
 
     def _handle_bin_fmt(self, line):
-        (__, fmt_type, fmt_len, name, fmt_str, labels) = struct.unpack("BBB4s16s64s", line[:87])
-        name=name.decode('ascii').strip('\x00')
-        fmt_str = fmt_str.decode('ascii').strip('\x00')
-        labels = labels.decode('ascii').strip('\x00').split(',')
-        self._formats[fmt_type] = MessageFormat(name, fmt_type, fmt_len, fmt_str, labels)
+        try:
+            (__, fmt_type, fmt_len, name, fmt_str, labels) = struct.unpack("BBB4s16s64s", line[:87])
+            name=name.decode('ascii').strip('\x00')
+            fmt_str = fmt_str.decode('ascii').strip('\x00')
+            labels = labels.decode('ascii').strip('\x00').split(',')
+            self._formats[fmt_type] = MessageFormat(name, fmt_type, fmt_len, fmt_str, labels)
+        except struct.error:
+            print("Error: Invalid Format Line")
+            print(line)
 
     def _bin_splitter(self, filehandle):
         marker = b'\xA3\x95'

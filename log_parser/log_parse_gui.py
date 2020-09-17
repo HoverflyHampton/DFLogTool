@@ -10,7 +10,7 @@ import os
 
 def loadFolder(folder):
     files = [os.path.join(folder, file) for file in os.listdir(
-        folder) if file.endswith('bin') or file.endswith('log')]
+        folder) if file.lower().endswith('bin') or file.lower().endswith('log')]
     base_file = None
     sync_file = None
     other_files = []
