@@ -88,6 +88,8 @@ class Root(FloatLayout):
         log = parse(self.base, self.sync, self.other)
         
         if log is not None:
+            if filename == "":
+                filename = "combo.log"
             fh = os.path.join(path, filename)
             log.output_log(fh)
             self.displayText = "Merged File Saved"
