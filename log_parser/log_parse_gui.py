@@ -23,11 +23,11 @@ def loadFolder(folder):
             other_files.append(f)
     return (base_file, sync_file, other_files)
 
-def parse(base, sync, other):
+def parse(base, sync, other, offset):
     if base is None:
         return None
     log = DFLog(base)
-    ts = 0
+    ts = offset
     if sync is not None:
         ips_log = DFLog(sync)
         ts += log.find_offset(ips_log)
@@ -85,7 +85,12 @@ class Root(FloatLayout):
     def save(self, path, filename):
         self.displayText = "Processing..."
         self.dismiss_popup()
-        log = parse(self.base, self.sync, self.other)
+        offset = 0
+        try:
+            offset = int(self.ids.time_offset.text)
+        except:
+            pass
+        log = parse(self.base, self.sync, self.other, offset)
         
         if log is not None:
             if filename == "":
