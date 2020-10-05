@@ -37,7 +37,15 @@ def parse(base, sync, other, offset):
             log.merge(DFLog(f), drop_tables=['GPS'], time_shift=ts)
     return log
 
-class LoadDialog(FloatLayout):
+class LoadBaseDialog(FloatLayout):
+    load = ObjectProperty(None)
+    cancel = ObjectProperty(None)
+
+class LoadSyncDialog(FloatLayout):
+    load = ObjectProperty(None)
+    cancel = ObjectProperty(None)
+
+class LoadOtherDialog(FloatLayout):
     load = ObjectProperty(None)
     cancel = ObjectProperty(None)
 
@@ -59,8 +67,20 @@ class Root(FloatLayout):
     def dismiss_popup(self):
         self._popup.dismiss()
 
-    def show_load(self):
-        content = LoadDialog(load=self.load, cancel=self.dismiss_popup)
+    def show_base_load(self):
+        content = LoadBaseDialog(load=self.load_base, cancel=self.dismiss_popup)
+        self._popup = Popup(title="Select Folder", content=content,
+                            size_hint=(0.9, 0.9))
+        self._popup.open()
+
+    def show_sync_load(self):
+        content = LoadSyncDialog(load=self.load_sync, cancel=self.dismiss_popup)
+        self._popup = Popup(title="Select Folder", content=content,
+                            size_hint=(0.9, 0.9))
+        self._popup.open()
+
+    def show_other_load(self):
+        content = LoadOtherDialog(load=self.load_other, cancel=self.dismiss_popup)
         self._popup = Popup(title="Select Folder", content=content,
                             size_hint=(0.9, 0.9))
         self._popup.open()
@@ -71,16 +91,40 @@ class Root(FloatLayout):
                             size_hint=(0.9, 0.9))
         self._popup.open()
 
-    def load(self, path, filename):
-        
-        folder = filename[0]
-        self.base, self.sync, self.other = loadFolder(folder)
-        print(self.base, self.sync, self.other)
-        self.displayText = "Base: {}\nSync: {}\nOther Files: \n".format(self.base, self.sync)
+    def load_base(self, path, filename):
+        print(path, filename)
+        self.base = os.path.join(path, filename[0])
+        self.update_display()
+        self.dismiss_popup()
+
+    def load_sync(self, path, filename):
+        self.sync = os.path.join(path, filename[0])
+        self.update_display()
+        self.dismiss_popup()
+
+    def load_other(self, path, filenames):
+        self.other = []
+        for name in filenames:
+            self.other.append(os.path.join(path, name))
+        self.update_display()
+        self.dismiss_popup()
+
+    def update_display(self):
+        self.displayText = "Base: {}\nSync: {}\nOther Files: \n".format(
+            self.base, self.sync)
         otherText = '             {}\n'*len(self.other)
         self.displayText += otherText.format(*self.other)
-        print(self.displayText)
-        self.dismiss_popup()
+    
+    
+    # def load(self, path, filename):
+    #     folder = filename[0]
+    #     self.base, self.sync, self.other = loadFolder(folder)
+    #     print(self.base, self.sync, self.other)
+    #     self.displayText = "Base: {}\nSync: {}\nOther Files: \n".format(self.base, self.sync)
+    #     otherText = '             {}\n'*len(self.other)
+    #     self.displayText += otherText.format(*self.other)
+    #     print(self.displayText)
+    #     self.dismiss_popup()
 
     def save(self, path, filename):
         self.displayText = "Processing..."
@@ -90,6 +134,7 @@ class Root(FloatLayout):
             offset = int(self.ids.time_offset.text)
         except:
             pass
+        print(offset)
         log = parse(self.base, self.sync, self.other, offset)
         
         if log is not None:
@@ -107,7 +152,9 @@ class Editor(App):
 
 
 Factory.register('Root', cls=Root)
-Factory.register('LoadDialog', cls=LoadDialog)
+Factory.register('LoadBaseDialog', cls=LoadBaseDialog)
+Factory.register('LoadSyncDialog', cls=LoadSyncDialog)
+Factory.register('LoadOtherDialog', cls=LoadOtherDialog)
 Factory.register('SaveDialog', cls=SaveDialog)
 
 def main():

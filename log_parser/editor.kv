@@ -5,11 +5,17 @@ Root:
             size_hint_y: None
             height: 30
             Button:
-                text: 'Load'
-                on_release: root.show_load()
+                text: 'Load PIX'
+                on_release: root.show_base_load()
+
             Button:
-                text: 'Save'
-                on_release: root.show_save()
+                text: 'Load HUE'
+                on_release: root.show_sync_load()
+            
+            Button:
+                text: 'Load Remaining'
+                on_release: root.show_other_load()
+            
         BoxLayout:
             size_hint_y: None
             height: 30
@@ -19,19 +25,60 @@ Root:
                 id: time_offset
                 text: '0'
         BoxLayout:
+            Button:
+                text: 'Save'
+                on_release: root.show_save()
+        BoxLayout:
             Label:
                 text: root.displayText
                 show_errors: True
 
-<LoadDialog>:
+<LoadBaseDialog>:
     BoxLayout:
         size: root.size
         pos: root.pos
         orientation: "vertical"
         FileChooserListView:
             id: filechooser
-            dirselect: True
-            filters: [lambda folder, filename: not filename.endswith('')]
+
+        BoxLayout:
+            size_hint_y: None
+            height: 30
+            Button:
+                text: "Cancel"
+                on_release: root.cancel()
+
+            Button:
+                text: "Load"
+                on_release: root.load(filechooser.path, filechooser.selection)
+
+<LoadSyncDialog>:
+    BoxLayout:
+        size: root.size
+        pos: root.pos
+        orientation: "vertical"
+        FileChooserListView:
+            id: filechooser
+
+        BoxLayout:
+            size_hint_y: None
+            height: 30
+            Button:
+                text: "Cancel"
+                on_release: root.cancel()
+
+            Button:
+                text: "Load"
+                on_release: root.load(filechooser.path, filechooser.selection)
+
+<LoadOtherDialog>:
+    BoxLayout:
+        size: root.size
+        pos: root.pos
+        orientation: "vertical"
+        FileChooserListView:
+            id: filechooser
+            multiselect: True
 
         BoxLayout:
             size_hint_y: None
