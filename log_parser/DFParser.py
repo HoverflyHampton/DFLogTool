@@ -176,6 +176,7 @@ class DFLog(object):
     def _format_tables(self):
         """Creates the FMT dataframe, then uses that dataframe to format the dictionaries
         """
+        print(self._data.keys())
         np_fmt = np.array(self._data['FMT'])
         fmt_names = np_fmt[:, 3]
         fmt_ids = np_fmt[:, 2]
@@ -231,20 +232,17 @@ class DFLog(object):
                     continue
                 temp_array = self.tables[table].to_numpy()
                 temp_array = np.hstack([temp_array[:, :1], 
-                                        np.reshape([int(val) for val in temp_array[:, 1]], 
+                                        np.reshape([np.uint64(val) for val in temp_array[:, 1]], 
                                                    (len(temp_array), 1)),
                                         np.reshape([", ".join([str(x) 
                                                          for x in row]) 
                                                     for row in temp_array[:, 2:]],
                                                     (len(temp_array), 1))])
-                if(table == 'CTUN'):
-                    temp_array[:, 1] = temp_array[:, 1].astype(np.uint64)
-                    print(temp_array[temp_array[:, 1].astype(np.uint64).argsort()])
                 if numpy_msgs is None:
                     numpy_msgs = temp_array
                 else:
                     numpy_msgs = np.vstack((numpy_msgs, temp_array))
-            numpy_msgs = numpy_msgs[numpy_msgs[:,1].astype(np.uint64).argsort()]
+            numpy_msgs = numpy_msgs[numpy_msgs[:, 1].astype(np.uint64).argsort()]
             np.savetxt(outfile, numpy_msgs, fmt='%s', delimiter=', ', newline='\n')
 
     def drop_empty(self):
@@ -311,9 +309,8 @@ class DFLog(object):
             self.tables[name] = self.tables[name].drop_duplicates(subset=[field])
         
         # and insert the new message dataframes into tables
-        print(time_shift)
         for name in [x for x in other.tables if x not in drop_tables and x not in format_table_names]:
-            other.tables[name]['TimeUS'] = other.tables[name]['TimeUS'].astype(np.int64) + time_shift
+            other.tables[name]['TimeUS'] = other.tables[name]['TimeUS'].astype(np.uint64) + time_shift
             self.tables[name] = other.tables[name]
     
     def find_offset(self, other):
