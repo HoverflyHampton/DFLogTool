@@ -6,9 +6,33 @@ This tool is used to merge logs in data flash format. It will sort merged log li
 - Python 3.5+
 - Pandas 1.0.5+
 - Numpy 1.19.1+
+- Kivy 1.11.1+
+
+### Installing Requirements
+#### Conda
+For package managment, install Miniconda for python 3 from the following link : https://docs.conda.io/en/latest/miniconda.html. Once install is complete, there should be a new program called `Anaconda Prompt` - run the following commands in that prompt
+
+```
+cd <Location of Dataflash Merger Folder>
+conda create --name dataflash
+conda activate dataflash
+```
+
+From now on, before running the data flash parser for the first time after opening the Anaconda Prompt, make sure to call `conda activate dataflash`.
+
+#### Numpy
+Call `conda install numpy` from the Anaconda prompt
+
+#### Pandas
+Call `conda install pandas` from the Anaconda prompt
+
+#### Kivy
+Call `conda install kivy` from the Anaconda prompt
+## GUI Application
+To run the GUI application, call `python cli.py` from the top level folder.
 
 ## Examples
-On Linux, run with `./DFParser.py`. On Windows, call with `python3 DFParser.py`
+To run the command line application, cd into the log_parser directory. Then, on Linux run with `./DFParser.py`. On Windows, call with `python DFParser.py`
 #### Basic Merge of Multiple files
 `./DFParser.py <path_to_output_file> <path_to_main_file> -f <path_to_merge_file1> <path_to_merge_fileX>`  
 #### Merge with time offset  
