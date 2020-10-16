@@ -315,12 +315,12 @@ class DFLog(object):
     
     def find_offset(self, other):
         # Check if self is a craft log, and other has ISP data
-        if 'RCOU' not in self.tables and 'IPS' not in other.tables:
+        if 'RCOU' not in self.tables and 'BGU1' not in other.tables:
             return 0 # Can't find an offset, return no offset
 
-        ips_launch = other.tables['IPS'][other.tables['IPS']['mA'].astype(int) > 600].iloc[0]
-        craft_launch = self.tables['RCOU'][self.tables['RCOU']['C1'].astype(int) > 1500].iloc[0]
-        us_offset = int(craft_launch['TimeUS']) - int(ips_launch['TimeUS'])
+        bgu_launch = other.tables['BGU1'][other.tables['BGU1']['CurrAll'].astype(int) >= 18000].iloc[0]
+        craft_launch = self.tables['BAT'][self.tables['BAT']['Curr'].astype(float) >= 18].iloc[0]
+        us_offset = int(craft_launch['TimeUS']) - int(bgu_launch['TimeUS'])
         return us_offset
 
 if __name__ == "__main__":
