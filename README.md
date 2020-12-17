@@ -39,8 +39,8 @@ To run the command line application, cd into the log_parser directory. Then, on 
 `./DFParser.py <path_to_output_file> <path_to_main_file> -f <path_to_merge_file> -t <int_time_offset>`  
 #### Merge, ignoring tables in incoming files  
 `./DFParser.py <path_to_output_file> <path_to_main_file> -f <path_to_merge_file> -d <msg_name_to_ignore>`  
-#### Merge, automatically finding time synch from IPS file
-`./DFParser.py <path_to_output_file> <path_to_main_file> -a <path_to_ips_file> -f <path_to_merge_file>`  
+#### Merge, automatically finding time synch from IPS/Bgu file
+`./DFParser.py <path_to_output_file> <path_to_main_file> -a <path_to_ips_or_bgu_file> -f <path_to_merge_file>`  
 
 ## As a library
 The DFParser code can be called as a library in order to manipulate dataflash logs in python. The main useful structure of the DFParser object is the tables field. `tables` is a dictionary keyed on message name containing a pandas DataFrame with all the messages of the type listed. 
