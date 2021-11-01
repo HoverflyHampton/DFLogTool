@@ -72,7 +72,7 @@ class DFLog(object):
         self.tables = {}
         self._data = {}
         self._formats = {}
-        if filename[-3:] == 'bin':
+        if filename[-3:].lower() == 'bin':
             self._read_from_bin_file(filename)
         else:
             self._read_from_file(filename)
