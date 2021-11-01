@@ -27,7 +27,7 @@ Call `conda install numpy` from the Anaconda prompt
 Call `conda install pandas` from the Anaconda prompt
 
 #### Kivy
-Call `conda install kivy` from the Anaconda prompt
+Call `conda install kivy -c conda-forge` from the Anaconda prompt
 ## GUI Application
 To run the GUI application, call `python cli.py` from the top level folder.
 
