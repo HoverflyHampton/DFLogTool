@@ -4,6 +4,8 @@ import argparse
 import struct
 import numpy as np
 import pandas as pd
+import datetime
+from log_parser.GPSTimeHelper import gps2utc
 
 
 
@@ -76,6 +78,19 @@ class DFLog(object):
             self._read_from_bin_file(filename)
         else:
             self._read_from_file(filename)
+
+        self.gps_zero_time = None
+        if "GPS" in self.tables:
+            self.gps_zero_time = self._find_gps_zero()
+
+    def _find_gps_zero(self):
+        first_gps_time = gps2utc(
+            self.tables['GPS']["GWk"].iloc[0], 
+            self.tables['GPS']["GMS"].iloc[0])
+        gps_ms_time = self.tables['GPS']['timeUS'].iloc[0]
+        return first_gps_time - datetime.timedelta(milliseconds=gps_ms_time)
+
+
 
     
     def _read_from_file(self, filename):
@@ -246,7 +261,7 @@ class DFLog(object):
             np.savetxt(outfile, numpy_msgs, fmt='%s', delimiter=', ', newline='\n')
 
     def drop_empty(self):
-        """ Drop all tables that have no entries, and removes thier format message
+        """ Drop all tables that have no entries, and removes their format message
         """        
         drop_tables = []
         for table in self.tables:
@@ -257,7 +272,7 @@ class DFLog(object):
             drop_idx = self.tables['FMT'][self.tables['FMT']['Type'] == val].index
             self.tables['FMT'].drop(drop_idx, inplace=True)
 
-    def merge(self, other, drop_tables=None, time_shift=0):
+    def merge(self, other, drop_tables=None, time_shift=0, gps_time_shift=False):
         """Merges a DFParser object into this object. Has side effects on other
 
         Args:
@@ -309,6 +324,11 @@ class DFLog(object):
             self.tables[name] = self.tables[name].drop_duplicates(subset=[field])
         
         # and insert the new message dataframes into tables
+        if not gps_time_shift:
+            self.gps_zero_time = other.gps_zero_time
+        else:
+            gps_zero_diff = self.gps_zero_time - other.gps_zero_time
+            time_shift+=gps_zero_diff.total_seconds()*1000
         for name in [x for x in other.tables if x not in drop_tables and x not in format_table_names]:
             other.tables[name]['TimeUS'] = other.tables[name]['TimeUS'].astype(np.uint64) + time_shift
             self.tables[name] = other.tables[name]
@@ -341,10 +361,11 @@ if __name__ == "__main__":
     if args.auto_shift is not None:
         ips_log = DFLog(args.auto_shift)
         ts += log.find_offset(ips_log)
-        log.merge(ips_log, drop_tables=args.drop, time_shift=ts)
+        log.merge(ips_log, drop_tables=args.drop,
+                  time_shift=ts, gps_time_shift=True)
     if args.files is not None:
         for f in args.files:
-            log.merge(DFLog(f), drop_tables=args.drop, time_shift=ts)
+            log.merge(DFLog(f), drop_tables=args.drop, time_shift=ts, gps_time_shift=True)
     log.output_log(args.output)
 
 

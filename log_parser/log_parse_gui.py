@@ -31,10 +31,12 @@ def parse(base, sync, other, offset):
     if sync is not None:
         ips_log = DFLog(sync)
         ts += log.find_offset(ips_log)
-        log.merge(ips_log, drop_tables=['GPS'], time_shift=ts)
+        log.merge(ips_log, drop_tables=['GPS'],
+                  time_shift=ts, gps_time_shift=False)
     if other is not None:
         for f in other:
-            log.merge(DFLog(f), drop_tables=['GPS'], time_shift=ts)
+            log.merge(DFLog(f), drop_tables=[
+                      'GPS'], time_shift=ts, gps_time_shift=True)
     return log
 
 class LoadBaseDialog(FloatLayout):

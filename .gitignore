@@ -1,5 +1,6 @@
 *.log
 *.bin
-.vscode/*
+.vscode/
 *.csv
 *.pyc
+test/
