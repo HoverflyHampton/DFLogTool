@@ -85,9 +85,9 @@ class DFLog(object):
 
     def _find_gps_zero(self):
         first_gps_time = gps2utc(
-            self.tables['GPS']["GWk"].iloc[0], 
-            self.tables['GPS']["GMS"].iloc[0])
-        gps_ms_time = self.tables['GPS']['timeUS'].iloc[0]
+            int(self.tables['GPS']["GWk"].iloc[0]), 
+            int(self.tables['GPS']["GMS"].iloc[0]))
+        gps_ms_time = int(self.tables['GPS']['TimeUS'].iloc[0])
         return first_gps_time - datetime.timedelta(milliseconds=gps_ms_time)
 
 
@@ -328,7 +328,7 @@ class DFLog(object):
             self.gps_zero_time = other.gps_zero_time
         else:
             gps_zero_diff = self.gps_zero_time - other.gps_zero_time
-            time_shift+=gps_zero_diff.total_seconds()*1000
+            time_shift-=gps_zero_diff.total_seconds()*1000
         for name in [x for x in other.tables if x not in drop_tables and x not in format_table_names]:
             other.tables[name]['TimeUS'] = other.tables[name]['TimeUS'].astype(np.uint64) + time_shift
             self.tables[name] = other.tables[name]
