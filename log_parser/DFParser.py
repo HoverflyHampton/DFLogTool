@@ -362,7 +362,7 @@ if __name__ == "__main__":
         ips_log = DFLog(args.auto_shift)
         ts += log.find_offset(ips_log)
         log.merge(ips_log, drop_tables=args.drop,
-                  time_shift=ts, gps_time_shift=True)
+                  time_shift=ts, gps_time_shift=False)
     if args.files is not None:
         for f in args.files:
             log.merge(DFLog(f), drop_tables=args.drop, time_shift=ts, gps_time_shift=True)
