@@ -16,6 +16,8 @@ Root:
                 text: 'Load Remaining'
                 on_release: root.show_other_load()
             
+
+            
         BoxLayout:
             size_hint_y: None
             height: 30
@@ -24,6 +26,14 @@ Root:
             TextInput:
                 id: time_offset
                 text: '0'
+        BoxLayout:
+            size_hint_y: None
+            hight: 30
+            Label:
+                text: "New BGU Log Format"
+            CheckBox:
+                id: bgu_format_checkbox
+                on_active: root.bgu_format_change(self, self.active)
         BoxLayout:
             Button:
                 text: 'Save'

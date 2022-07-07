@@ -1,6 +1,6 @@
 import os
 import sys
-from kivy.resources import resource_add_path, resource_find
+from kivy.resources import resource_add_path
 from log_parser.log_parse_gui import Editor
 
 

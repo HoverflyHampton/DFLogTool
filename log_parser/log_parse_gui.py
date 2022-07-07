@@ -1,12 +1,16 @@
 from kivy.app import App
 from kivy.uix.floatlayout import FloatLayout
 from kivy.factory import Factory
-from kivy.properties import ObjectProperty, ListProperty
+from kivy.properties import ObjectProperty, ListProperty, NumericProperty
 from kivy.uix.popup import Popup
 
 from log_parser.DFParser import DFLog
 
 import os
+
+NEW_BGU_CURR = 250
+OLD_BGU_CURR = 18000
+
 
 def loadFolder(folder):
     files = [os.path.join(folder, file) for file in os.listdir(
@@ -23,14 +27,14 @@ def loadFolder(folder):
             other_files.append(f)
     return (base_file, sync_file, other_files)
 
-def parse(base, sync, other, offset):
+def parse(base, sync, other, offset, bgu_current=18000):
     if base is None:
         return None
     log = DFLog(base)
     ts = offset
     if sync is not None:
         ips_log = DFLog(sync)
-        ts += log.find_offset(ips_log)
+        ts += log.find_offset(ips_log, bgu_current)
         log.merge(ips_log, drop_tables=['GPS'],
                   time_shift=ts, gps_time_shift=False)
     if other is not None:
@@ -65,6 +69,7 @@ class Root(FloatLayout):
     savefile = ObjectProperty(None)
     displayText = ObjectProperty("Select a folder to load files from before saving - no folder currently selected")
     text_input = ObjectProperty(None)
+    bgu_current_sync = NumericProperty(18000)
 
     def dismiss_popup(self):
         self._popup.dismiss()
@@ -116,6 +121,12 @@ class Root(FloatLayout):
             self.base, self.sync)
         otherText = '             {}\n'*len(self.other)
         self.displayText += otherText.format(*self.other)
+
+    def bgu_format_change(self, instance, checkbox_value):
+        if checkbox_value:
+            self.bgu_current_sync = NEW_BGU_CURR
+        else:
+            self.bgu_current_sync = OLD_BGU_CURR
     
     
     # def load(self, path, filename):
@@ -137,7 +148,7 @@ class Root(FloatLayout):
         except:
             pass
         print(offset)
-        log = parse(self.base, self.sync, self.other, offset)
+        log = parse(self.base, self.sync, self.other, offset, self.bgu_current_sync)
         
         if log is not None:
             if filename == "":
