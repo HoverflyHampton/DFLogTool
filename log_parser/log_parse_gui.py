@@ -8,9 +8,6 @@ from log_parser.DFParser import DFLog
 
 import os
 
-NEW_BGU_CURR = 250
-OLD_BGU_CURR = 18000
-
 
 def loadFolder(folder):
     files = [os.path.join(folder, file) for file in os.listdir(
@@ -27,7 +24,7 @@ def loadFolder(folder):
             other_files.append(f)
     return (base_file, sync_file, other_files)
 
-def parse(base, sync, other, offset, bgu_current=18000):
+def parse(base, sync, other, offset, bgu_current=18):
     if base is None:
         return None
     log = DFLog(base)
@@ -69,7 +66,6 @@ class Root(FloatLayout):
     savefile = ObjectProperty(None)
     displayText = ObjectProperty("Select a folder to load files from before saving - no folder currently selected")
     text_input = ObjectProperty(None)
-    bgu_current_sync = NumericProperty(18000)
 
     def dismiss_popup(self):
         self._popup.dismiss()
@@ -121,12 +117,6 @@ class Root(FloatLayout):
             self.base, self.sync)
         otherText = '             {}\n'*len(self.other)
         self.displayText += otherText.format(*self.other)
-
-    def bgu_format_change(self, instance, checkbox_value):
-        if checkbox_value:
-            self.bgu_current_sync = NEW_BGU_CURR
-        else:
-            self.bgu_current_sync = OLD_BGU_CURR
     
     
     # def load(self, path, filename):
@@ -148,7 +138,7 @@ class Root(FloatLayout):
         except:
             pass
         print(offset)
-        log = parse(self.base, self.sync, self.other, offset, self.bgu_current_sync)
+        log = parse(self.base, self.sync, self.other, offset)
         
         if log is not None:
             if filename == "":
