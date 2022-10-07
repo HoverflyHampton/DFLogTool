@@ -1,3 +1,4 @@
+from importlib.resources import contents
 from kivy.app import App
 from kivy.uix.floatlayout import FloatLayout
 from kivy.factory import Factory
@@ -7,6 +8,8 @@ from kivy.uix.popup import Popup
 from log_parser.DFParser import DFLog
 
 import os
+from pathlib import Path
+import glob
 
 
 def loadFolder(folder):
@@ -24,6 +27,7 @@ def loadFolder(folder):
             other_files.append(f)
     return (base_file, sync_file, other_files)
 
+
 def parse(base, sync, other, offset, bgu_current=18):
     if base is None:
         return None
@@ -40,23 +44,36 @@ def parse(base, sync, other, offset, bgu_current=18):
                       'GPS'], time_shift=ts, gps_time_shift=True)
     return log
 
+
 class LoadBaseDialog(FloatLayout):
     load = ObjectProperty(None)
     cancel = ObjectProperty(None)
+    path = ObjectProperty(None)
+
 
 class LoadSyncDialog(FloatLayout):
     load = ObjectProperty(None)
     cancel = ObjectProperty(None)
+    path = ObjectProperty(None)
+
 
 class LoadOtherDialog(FloatLayout):
     load = ObjectProperty(None)
     cancel = ObjectProperty(None)
+    path = ObjectProperty(None)
+
+
+class LoadFolderDialog(FloatLayout):
+    load = ObjectProperty(None)
+    cancel = ObjectProperty(None)
+    path = ObjectProperty(None)
 
 
 class SaveDialog(FloatLayout):
     save = ObjectProperty(None)
     text_input = ObjectProperty(None)
     cancel = ObjectProperty(None)
+    path = ObjectProperty(None)
 
 
 class Root(FloatLayout):
@@ -66,47 +83,66 @@ class Root(FloatLayout):
     savefile = ObjectProperty(None)
     displayText = ObjectProperty("Select a folder to load files from before saving - no folder currently selected")
     text_input = ObjectProperty(None)
+    folder_path = ObjectProperty(Path(__file__).anchor)
 
     def dismiss_popup(self):
         self._popup.dismiss()
 
     def show_base_load(self):
-        content = LoadBaseDialog(load=self.load_base, cancel=self.dismiss_popup)
+        content = LoadBaseDialog(load=self.load_base,
+                                 cancel=self.dismiss_popup,
+                                 path=self.folder_path)
         self._popup = Popup(title="Select Folder", content=content,
                             size_hint=(0.9, 0.9))
         self._popup.open()
 
     def show_sync_load(self):
-        content = LoadSyncDialog(load=self.load_sync, cancel=self.dismiss_popup)
+        content = LoadSyncDialog(load=self.load_sync,
+                                 cancel=self.dismiss_popup,
+                                 path=self.folder_path)
         self._popup = Popup(title="Select Folder", content=content,
                             size_hint=(0.9, 0.9))
         self._popup.open()
 
     def show_other_load(self):
-        content = LoadOtherDialog(load=self.load_other, cancel=self.dismiss_popup)
+        content = LoadOtherDialog(load=self.load_other,
+                                  cancel=self.dismiss_popup,
+                                  path=self.folder_path)
         self._popup = Popup(title="Select Folder", content=content,
                             size_hint=(0.9, 0.9))
         self._popup.open()
 
+    def show_folder_load(self):
+        content = LoadFolderDialog(load=self.load_all_log_files,
+                                   cancel=self.dismiss_popup,
+                                   path=self.folder_path)
+        self._popup = Popup(title="Select PIX File", content=content,
+                            size_hint=(0.9, 0.9))
+        self._popup.open()
+
     def show_save(self):
-        content = SaveDialog(save=self.save, cancel=self.dismiss_popup)
+        content = SaveDialog(save=self.save,
+                             cancel=self.dismiss_popup,
+                             path=self.folder_path)
         self._popup = Popup(title="Save file", content=content,
                             size_hint=(0.9, 0.9))
         self._popup.open()
 
     def load_base(self, path, filename):
-        print(path, filename)
         self.base = os.path.join(path, filename[0])
+        self.folder_path = path
         self.update_display()
         self.dismiss_popup()
 
     def load_sync(self, path, filename):
         self.sync = os.path.join(path, filename[0])
+        self.folder_path = path
         self.update_display()
         self.dismiss_popup()
 
     def load_other(self, path, filenames):
         self.other = []
+        self.folder_path = path
         for name in filenames:
             self.other.append(os.path.join(path, name))
         self.update_display()
@@ -118,16 +154,16 @@ class Root(FloatLayout):
         otherText = '             {}\n'*len(self.other)
         self.displayText += otherText.format(*self.other)
     
-    
-    # def load(self, path, filename):
-    #     folder = filename[0]
-    #     self.base, self.sync, self.other = loadFolder(folder)
-    #     print(self.base, self.sync, self.other)
-    #     self.displayText = "Base: {}\nSync: {}\nOther Files: \n".format(self.base, self.sync)
-    #     otherText = '             {}\n'*len(self.other)
-    #     self.displayText += otherText.format(*self.other)
-    #     print(self.displayText)
-    #     self.dismiss_popup()
+    def load_all_log_files(self, path):
+        self.base = glob.glob(os.path.join(path, "*PIX.log"))[0]
+        self.sync = glob.glob(os.path.join(path, "*BGU.log"))[0]
+        files = [f for f in glob.glob(os.path.join(path, "*.log"))
+                 if "combo" not in f and "PIX" not in f and "BGU" not in f]
+
+        self.other = files
+        self.folder_path = path
+        self.update_display()
+        self.dismiss_popup()
 
     def save(self, path, filename):
         self.displayText = "Processing..."
@@ -158,6 +194,7 @@ Factory.register('Root', cls=Root)
 Factory.register('LoadBaseDialog', cls=LoadBaseDialog)
 Factory.register('LoadSyncDialog', cls=LoadSyncDialog)
 Factory.register('LoadOtherDialog', cls=LoadOtherDialog)
+Factory.register("LoadFolder", cls=LoadFolderDialog)
 Factory.register('SaveDialog', cls=SaveDialog)
 
 def main():

@@ -15,9 +15,14 @@ Root:
             Button:
                 text: 'Load Remaining'
                 on_release: root.show_other_load()
-            
 
-            
+        BoxLayout:
+            size_hint_y: None
+            height: 30
+            Button:
+                text: 'Load From Folder'
+                on_release: root.show_folder_load()     
+
         BoxLayout:
             size_hint_y: None
             height: 30
@@ -42,6 +47,7 @@ Root:
         orientation: "vertical"
         FileChooserListView:
             id: filechooser
+            path: root.path
 
         BoxLayout:
             size_hint_y: None
@@ -61,6 +67,7 @@ Root:
         orientation: "vertical"
         FileChooserListView:
             id: filechooser
+            path: root.path
 
         BoxLayout:
             size_hint_y: None
@@ -81,6 +88,7 @@ Root:
         FileChooserListView:
             id: filechooser
             multiselect: True
+            path: root.path
 
         BoxLayout:
             size_hint_y: None
@@ -93,6 +101,26 @@ Root:
                 text: "Load"
                 on_release: root.load(filechooser.path, filechooser.selection)
 
+<LoadFolderDialog>:
+    BoxLayout:
+        size: root.size
+        pos: root.pos
+        orientation: "vertical"
+        FileChooserListView:
+            id: filechooser
+            path: root.path
+
+        BoxLayout:
+            size_hint_y: None
+            height: 30
+            Button:
+                text: "Cancel"
+                on_release: root.cancel()
+
+            Button:
+                text: "Load"
+                on_release: root.load(filechooser.path)    
+
 <SaveDialog>:
     text_input: text_input
     BoxLayout:
@@ -102,6 +130,7 @@ Root:
         FileChooserListView:
             id: filechooser
             on_selection: text_input.text = self.selection and self.selection[0] or ''
+            path: root.path
 
         TextInput:
             id: text_input
