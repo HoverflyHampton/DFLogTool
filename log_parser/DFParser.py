@@ -337,11 +337,15 @@ class DFLog(object):
         # Check if self is a craft log, and other has ISP data
         if 'RCOU' not in self.tables and 'BGU1' not in other.tables:
             return 0 # Can't find an offset, return no offset
-
-        bgu_launch = other.tables['BGU1'][other.tables['BGU1']['CurrAll'].astype(float) >= bgu_current].iloc[0]
-        craft_launch = self.tables['BAT'][self.tables['BAT']['Curr'].astype(float) >= 18].iloc[0]
-        us_offset = int(craft_launch['TimeUS']) - int(bgu_launch['TimeUS'])
-        return us_offset
+        try:
+            bgu_launch = other.tables['BGU1'][other.tables['BGU1']['CurrAll'].astype(float) >= bgu_current].iloc[0]
+            craft_launch = self.tables['BAT'][self.tables['BAT']['Curr'].astype(float) >= 18].iloc[0]
+            us_offset = int(craft_launch['TimeUS']) - int(bgu_launch['TimeUS'])
+            return us_offset
+        except IndexError:
+            # There was no valid spike for auto offset
+            print("Could not autodetect offset, try again with manual offset")
+            return 0
 
 if __name__ == "__main__":
 

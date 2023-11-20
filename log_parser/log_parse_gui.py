@@ -28,20 +28,21 @@ def loadFolder(folder):
     return (base_file, sync_file, other_files)
 
 
-def parse(base, sync, other, offset, bgu_current=18):
+def parse(base, sync, other, offset, auto_offset_enabled=True, bgu_current=18):
     if base is None:
         return None
     log = DFLog(base)
     ts = offset
     if sync is not None:
         ips_log = DFLog(sync)
-        ts += log.find_offset(ips_log, bgu_current)
+        if(auto_offset_enabled):
+            ts += log.find_offset(ips_log, bgu_current)
         log.merge(ips_log, drop_tables=['GPS'],
                   time_shift=ts, gps_time_shift=False)
     if other is not None:
         for f in other:
             log.merge(DFLog(f), drop_tables=[
-                      'GPS'], time_shift=ts, gps_time_shift=True)
+                      'GPS'], time_shift=ts, gps_time_shift=auto_offset_enabled)
     return log
 
 
@@ -83,6 +84,7 @@ class Root(FloatLayout):
     savefile = ObjectProperty(None)
     displayText = ObjectProperty("Select a folder to load files from before saving - no folder currently selected")
     text_input = ObjectProperty(None)
+
     folder_path = ObjectProperty(Path(__file__).anchor)
 
     def dismiss_popup(self):
@@ -174,7 +176,8 @@ class Root(FloatLayout):
         except:
             pass
         print(offset)
-        log = parse(self.base, self.sync, self.other, offset)
+        auto_offset = not bool(self.ids.disable_auto_offset.active)
+        log = parse(self.base, self.sync, self.other, offset, auto_offset_enabled = auto_offset)
         
         if log is not None:
             if filename == "":
