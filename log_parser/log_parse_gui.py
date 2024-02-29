@@ -19,7 +19,7 @@ def loadFolder(folder):
     sync_file = None
     other_files = []
     for f in files:
-        if 'HUE' in f:
+        if 'BGU' in f:
             sync_file = f
         elif 'PIX' in f:
             base_file = f

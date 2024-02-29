@@ -102,8 +102,9 @@ class DFLog(object):
         with open(filename, 'r') as infile:
             for line in infile:
                 data = [val.strip() for val in line.split(',')]
-                if data[0] == 'FMT':
-                    self.tables[data[3]] = pd.DataFrame(columns=data[5:])
+                # if data[0] == 'FMT':
+                #     self.tables[data[3]] = pd.DataFrame(columns=data[5:])
+                # if not data[0] == 'FILE':
                 self._add_row(data[0], data[1:])
         self._format_tables()
 
@@ -208,7 +209,10 @@ class DFLog(object):
             data  = self._data[name]
             fmt = self._formats[name]
             col_num = len(fmt.columns)-1
-            data = [row[:col_num] + [", ".join(row[col_num:])] for row in data]
+            data = np.array([row[:col_num] + [", ".join(row[col_num:])] for row in data])
+            #make all FMTU messages start at the begining of the file
+            if name == 'FMTU': 
+                data[:, 1] = 0
             self.tables[name] = pd.DataFrame(data, columns=fmt.columns)
             
 
@@ -244,6 +248,8 @@ class DFLog(object):
             numpy_msgs = None
             for table in self.tables:
                 if table == 'FMT':
+                    continue
+                if 'TimeUS' not in self.tables[table]:
                     continue
                 temp_array = self.tables[table].to_numpy()
                 temp_array = np.hstack([temp_array[:, :1], 
