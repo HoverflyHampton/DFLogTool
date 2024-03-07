@@ -37,6 +37,7 @@ def parse(base, sync, other, offset, auto_offset_enabled=True, bgu_current=18):
         ips_log = DFLog(sync)
         if(auto_offset_enabled):
             ts += log.find_offset(ips_log, bgu_current)
+            print(ts)
         log.merge(ips_log, drop_tables=['GPS'],
                   time_shift=ts, gps_time_shift=False)
     if other is not None:
@@ -172,7 +173,7 @@ class Root(FloatLayout):
         self.dismiss_popup()
         offset = 0
         try:
-            offset = int(self.ids.time_offset.text)
+            offset = float(self.ids.time_offset.text)
         except:
             pass
         print(offset)

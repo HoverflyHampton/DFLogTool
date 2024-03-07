@@ -293,33 +293,10 @@ class DFLog(object):
         format_table_names = {'FMT': 'Name',
                               'UNIT': 'Id', 'MULT': 'Id', 'FMTU': 'FmtType'}
         merge_names = list(other.tables.keys())
+        collisions = [x for x in merge_names if x in self.tables ]
         if drop_tables is None:
             drop_tables = []
-        merge_names = [x for x in merge_names if x not in drop_tables and x not in format_table_names]
-        
-        collisions = [x for x in merge_names if x in self.tables ]
-        if collisions:
-            # We need to rename all of the colliding columns in other, 
-            # and change the FMT tables names with new column names
-            rename_chars = ['X', 'Z', 'Q', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
-            new_names = collisions
-            for char in rename_chars:
-                new_names = [char + '{:>4}'.format(name)[1:].strip() for name in collisions]
-                # Check for collisions again - empty list means no collisions
-                if not [x for x in new_names if x in self.tables]:
-                    break
-            rename_char = new_names[0][0]
-            # Rename table keys in other
-            for idx, name in enumerate(collisions):
-                other.tables[new_names[idx]] = other.tables.pop(name)
-            #Rename the messages in 'FMT'
-            fmt_mask = other.tables['FMT']['Name'].isin(collisions)
-            other.tables['FMT'].loc[fmt_mask, 'Name'] = \
-                other.tables['FMT'].loc[fmt_mask, 'Name'].apply(
-                                                        lambda x: \
-                                                        rename_char + \
-                                                        '{:>4}'.format(x)[1:].strip())
-        
+        merge_names = [x for x in merge_names if x not in drop_tables and x not in format_table_names and x not in collisions]        
         
         # We append the FMT, UNIT, MULT, and FMTU tables
         # We then drop duplicate unit, mult and fmtu messages (check on type fields)
@@ -332,11 +309,12 @@ class DFLog(object):
         # and insert the new message dataframes into tables
         if not gps_time_shift:
             self.gps_zero_time = other.gps_zero_time
+            print(f'ts: {time_shift}')
         else:
             gps_zero_diff = self.gps_zero_time - other.gps_zero_time
-            time_shift-=gps_zero_diff.total_seconds()*1000
+            time_shift-=gps_zero_diff.total_seconds()
         for name in [x for x in other.tables if x not in drop_tables and x not in format_table_names]:
-            other.tables[name]['TimeUS'] = other.tables[name]['TimeUS'].astype(np.uint64) + time_shift
+            other.tables[name]['TimeUS'] = other.tables[name]['TimeUS'].astype(np.uint64) + int(time_shift*1e6)
             self.tables[name] = other.tables[name]
     
     def find_offset(self, other,  bgu_current=18):
@@ -347,7 +325,7 @@ class DFLog(object):
             bgu_launch = other.tables['BGU1'][other.tables['BGU1']['CurrAll'].astype(float) >= bgu_current].iloc[0]
             craft_launch = self.tables['BAT'][self.tables['BAT']['Curr'].astype(float) >= 18].iloc[0]
             us_offset = int(craft_launch['TimeUS']) - int(bgu_launch['TimeUS'])
-            return us_offset
+            return float(us_offset)/1e6
         except IndexError:
             # There was no valid spike for auto offset
             print("Could not autodetect offset, try again with manual offset")
