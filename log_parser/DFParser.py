@@ -307,6 +307,7 @@ class DFLog(object):
             self.tables[name] = self.tables[name].drop_duplicates(subset=[field])
         
         # and insert the new message dataframes into tables
+        # and insert the new message dataframes into tables
         if not gps_time_shift:
             self.gps_zero_time = other.gps_zero_time
             print(f'ts: {time_shift}')
