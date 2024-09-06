@@ -119,17 +119,20 @@ class DFLog(object):
                 if type_id == 128:
                     self._handle_bin_fmt(line)
                 self._data['LINES'].append(line)
-        current = self._data['LINES'][0]        
-        for line in self._data['LINES'][1:]:
-            if line[0] in self._formats and len(current) >= self._formats[current[0]].length-2:
+        try:
+            current = self._data['LINES'][0]        
+            for line in self._data['LINES'][1:]:
+                if line[0] in self._formats and len(current) >= self._formats[current[0]].length-2:
+                    self._add_bin_row(current[0], current)
+                    current = line
+                else:
+                    current = current + b'\xA3\x95' + line
+            self._data.pop('LINES')
+            if len(current) >= self._formats[current[0]].length-2:
                 self._add_bin_row(current[0], current)
-                current = line
-            else:
-                current = current + b'\xA3\x95' + line
-        self._data.pop('LINES')
-        if len(current) >= self._formats[current[0]].length-2:
-            self._add_bin_row(current[0], current)
-        self._format_bin_tables()
+            self._format_bin_tables()
+        except IndexError:
+            print(f'Error: No valid lines in file {filename}')
 
     def _handle_bin_fmt(self, line):
         try:
