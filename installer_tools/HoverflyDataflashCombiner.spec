@@ -5,7 +5,7 @@ block_cipher = None
 
 a = Analysis(['Y:\\git\\DFLogTool/gui.py'],
              pathex=['Y:\\git\\DFLogTools_Installer'],
-             binaries=[('C:\\Users\\Stranjyr\\Anaconda3\\pkgs\\mkl-2021.3.0-haa95532_524\\Library\\bin\\mkl_intel_thread.1.dll', '.')],
+             # binaries=[('C:\\Users\\Stranjyr\\Anaconda3\\pkgs\\mkl-2021.3.0-haa95532_524\\Library\\bin\\mkl_intel_thread.1.dll', '.')],
              datas=[('Y:\\git\\DFLogTool\\log_parser\\editor.kv', 'log_parser')],
              hiddenimports=['win32timezone'],
              hookspath=[],
