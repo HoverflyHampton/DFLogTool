@@ -8,6 +8,7 @@ import datetime
 from log_parser.GPSTimeHelper import gps2utc
 
 
+VALID_MSG_IDS = set(range(0, 256))
 
 class MessageFormat(object):
     _field_formats = {
@@ -70,14 +71,29 @@ class MessageFormat(object):
 
     
 class DFLog(object):
-    def __init__(self, filename):
+    def __init__(self, filename, droppable_tables_filename=None):
         self.tables = {}
         self._data = {}
         self._formats = {}
+        self._droppable_tables = []
+        
         if filename[-3:].lower() == 'bin':
             self._read_from_bin_file(filename)
         else:
             self._read_from_file(filename)
+
+        # Makes renaming fmt id numbers easier later
+        self.tables['FMT']['Type'] = pd.to_numeric(self.tables['FMT']['Type'])
+        self.tables['FMT'].set_index('Type', inplace=True)
+
+        # drop unused fmt messages to save space and make later merges easier
+        self._drop_empty_format_msgs()
+
+
+        # get a list of dropable tables - do this after reading in the file so
+        # we can crosscheck that the droppable tables exist
+        if droppable_tables_filename is not None:
+            self._read_droppable_tables(droppable_tables_filename)
 
         self.gps_zero_time = None
         if "GPS" in self.tables:
@@ -91,7 +107,19 @@ class DFLog(object):
         return first_gps_time - datetime.timedelta(milliseconds=gps_ms_time)
 
 
+    def _drop_empty_format_msgs(self):
+        unused_format_names = set(self.tables['FMT']['Name']) - set(self.tables.keys())
+        for name in unused_format_names:
+            table_type = self.tables['FMT'][self.tables['FMT']['Name'] == name].index[0]
+            self.tables['FMT'].drop(table_type, inplace=True)
 
+
+    def _read_droppable_tables(self, droppable_tables_filename):
+        with open(droppable_tables_filename, 'r') as infile:
+            for line in infile:
+                table_name = line.strip()
+                if table_name in self.tables:
+                    self._droppable_tables.append(table_name)
     
     def _read_from_file(self, filename):
         """Reads a log file into the datastructure
@@ -244,6 +272,9 @@ class DFLog(object):
             pass    
         with open(filename, 'a') as outfile:
             # First, write the format messages
+            # add the type column back (from the index)
+            print(self.tables['FMT'].index)
+            self.tables['FMT'].insert(1, 'Type', self.tables['FMT'].index)
             fmt_np = self.tables['FMT'].to_numpy()
             np.savetxt(outfile, fmt_np, fmt='%s', delimiter=',', newline='\n')
             
@@ -269,17 +300,37 @@ class DFLog(object):
             numpy_msgs = numpy_msgs[numpy_msgs[:, 1].astype(np.uint64).argsort()]
             np.savetxt(outfile, numpy_msgs, fmt='%s', delimiter=', ', newline='\n')
 
-    def drop_empty(self):
-        """ Drop all tables that have no entries, and removes their format message
-        """        
-        drop_tables = []
-        for table in self.tables:
-            if self.tables[table].empty:
-                drop_tables.append(table)
-        for val in drop_tables:
-            self.tables.pop(val)
-            drop_idx = self.tables['FMT'][self.tables['FMT']['Type'] == val].index
-            self.tables['FMT'].drop(drop_idx, inplace=True)
+    def renumber_msg(self, old_msg_type, new_msg_type):
+        self.tables['FMT'].rename(index={old_msg_type: new_msg_type}, inplace=True)
+        print(f'{old_msg_type}:{self.tables["FMT"].loc[new_msg_type]["Name"]} renumbered to {new_msg_type}')
+
+    def renumber_merged_file_fmts(self, other):
+        print(self.tables['FMT'])
+        avaliable_numbers = VALID_MSG_IDS - set(self.tables['FMT'].index)
+        format_types_to_merge = [128, 112, 111, 113] # FMT, FMTU, UNIT, MULT
+        for type_num, fmt_msg in other.tables['FMT'].iterrows():
+            if type_num in format_types_to_merge:
+                continue
+            if type_num not in avaliable_numbers:
+                print(f'{self.tables["FMT"].loc[type_num]["Name"]} collides with {other.tables["FMT"].loc[type_num]["Name"]}')
+                new_number = avaliable_numbers.pop() if len(avaliable_numbers) > 0 else self.drop_message_and_get_id()
+                if new_number != -1:
+                    other.renumber_msg(type_num, new_number)
+                else:
+                    print(f"Out of Message space - unable to add {fmt_msg['Name']}:{type_num}")
+            else:
+                avaliable_numbers.remove(type_num)
+
+    def drop_message_and_get_id(self):
+        if len(self._droppable_tables) > 0:
+            next_table = self._droppable_tables.pop(0)
+            table_type = self.tables['FMT'][self.tables['FMT']['Name'] == next_table].index[0]
+
+            self.tables.pop(next_table, None)
+            self.tables['FMT'].drop(table_type, inplace=True)
+            return table_type
+        return -1
+
 
     def merge(self, other, drop_tables=None, time_shift=0, gps_time_shift=False):
         """Merges a DFParser object into this object. Has side effects on other
@@ -288,9 +339,6 @@ class DFLog(object):
             other (DFParser): The log data to add
             drop_tables (list<str>, optional) : Names of tables to not include in the merge. Defaults to None
         """        
-        
-        #drop unused tables in other
-        other.drop_empty()
         
         # find collisions
         format_table_names = {'FMT': 'Name',
@@ -301,15 +349,23 @@ class DFLog(object):
             drop_tables = []
         merge_names = [x for x in merge_names if x not in drop_tables and x not in format_table_names and x not in collisions]        
         
+
+        #drop tables from FMT of other that are in the drop tables list
+        for table_name in drop_tables:
+            drop_idx = self.tables['FMT'].index[self.tables['FMT']['Name'] == table_name].tolist()[0]
+            self.tables['FMT'].drop(index=drop_idx)
+            print(table_name)
+
+        #check for and correct any format type number collisions
+        self.renumber_merged_file_fmts(other)
+
         # We append the FMT, UNIT, MULT, and FMTU tables
         # We then drop duplicate unit, mult and fmtu messages (check on type fields)
         for __, (name, field) in enumerate(format_table_names.items()):
             if name in other.tables:
-                self.tables[name] = pd.concat([self.tables[name], other.tables[name]],
-                                          ignore_index=True)
+                self.tables[name] = pd.concat([self.tables[name], other.tables[name]])
             self.tables[name] = self.tables[name].drop_duplicates(subset=[field])
         
-        # and insert the new message dataframes into tables
         # and insert the new message dataframes into tables
         if not gps_time_shift:
             self.gps_zero_time = other.gps_zero_time
@@ -317,7 +373,7 @@ class DFLog(object):
         else:
             gps_zero_diff = self.gps_zero_time - other.gps_zero_time
             time_shift-=gps_zero_diff.total_seconds()
-        for name in [x for x in other.tables if x not in drop_tables and x not in format_table_names]:
+        for name in merge_names:
             other.tables[name]['TimeUS'] = other.tables[name]['TimeUS'].astype(np.uint64) + int(time_shift*1e6)
             self.tables[name] = other.tables[name]
     
