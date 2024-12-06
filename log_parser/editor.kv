@@ -36,6 +36,12 @@ Root:
                 id: time_offset
                 text: '0'
         BoxLayout:
+            size_hint_y: None
+            height: 30
+            Button:
+                text: 'Load Dropable Names File'
+                on_release: root.show_load_droppable_names()
+        BoxLayout:
             Button:
                 text: 'Save'
                 on_release: root.show_save()
@@ -124,6 +130,26 @@ Root:
             Button:
                 text: "Load"
                 on_release: root.load(filechooser.path)    
+
+<LoadDroppableDialog>:
+    BoxLayout:
+        size: root.size
+        pos: root.pos
+        orientation: "vertical"
+        FileChooserListView:
+            id: filechooser
+            path: root.path
+
+        BoxLayout:
+            size_hint_y: None
+            height: 30
+            Button:
+                text: "Cancel"
+                on_release: root.cancel()
+
+            Button:
+                text: "Load"
+                on_release: root.load(filechooser.path, filechooser.selection)
 
 <SaveDialog>:
     text_input: text_input

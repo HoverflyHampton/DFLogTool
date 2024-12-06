@@ -273,7 +273,7 @@ class DFLog(object):
         with open(filename, 'a') as outfile:
             # First, write the format messages
             # add the type column back (from the index)
-            print(self.tables['FMT'].index)
+            print(self.tables['FMT'])
             self.tables['FMT'].insert(1, 'Type', self.tables['FMT'].index)
             fmt_np = self.tables['FMT'].to_numpy()
             np.savetxt(outfile, fmt_np, fmt='%s', delimiter=',', newline='\n')
@@ -304,29 +304,36 @@ class DFLog(object):
         self.tables['FMT'].rename(index={old_msg_type: new_msg_type}, inplace=True)
         print(f'{old_msg_type}:{self.tables["FMT"].loc[new_msg_type]["Name"]} renumbered to {new_msg_type}')
 
-    def renumber_merged_file_fmts(self, other):
-        print(self.tables['FMT'])
+    def renumber_merged_file_fmts(self, other, dropped_tables=[]):
         avaliable_numbers = VALID_MSG_IDS - set(self.tables['FMT'].index)
-        format_types_to_merge = [128, 112, 111, 113] # FMT, FMTU, UNIT, MULT
+        format_types_to_merge = ['FMT', 'FMTU', 'UNIT', 'MULT']
         for type_num, fmt_msg in other.tables['FMT'].iterrows():
-            if type_num in format_types_to_merge:
+            if fmt_msg['Name'] in dropped_tables or fmt_msg['Name'] in format_types_to_merge:
                 continue
             if type_num not in avaliable_numbers:
-                print(f'{self.tables["FMT"].loc[type_num]["Name"]} collides with {other.tables["FMT"].loc[type_num]["Name"]}')
+                try:
+                    print(f'{self.tables["FMT"].loc[type_num]["Name"]} collides with {other.tables["FMT"].loc[type_num]["Name"]}')
+                except:
+                    print(f'conflict on {type_num}')
                 new_number = avaliable_numbers.pop() if len(avaliable_numbers) > 0 else self.drop_message_and_get_id()
                 if new_number != -1:
                     other.renumber_msg(type_num, new_number)
                 else:
                     print(f"Out of Message space - unable to add {fmt_msg['Name']}:{type_num}")
+                    other.drop_message_and_get_id(fmt_msg['Name'])
+
             else:
                 avaliable_numbers.remove(type_num)
 
-    def drop_message_and_get_id(self):
-        if len(self._droppable_tables) > 0:
-            next_table = self._droppable_tables.pop(0)
-            table_type = self.tables['FMT'][self.tables['FMT']['Name'] == next_table].index[0]
+    def drop_message_and_get_id(self, table_name=None):
+        
+        if table_name is None and len(self._droppable_tables) > 0:
+            table_name = self._droppable_tables.pop(0)
+        if table_name is not None:
+            print(f'Dropping {table_name}')
+            table_type = self.tables['FMT'][self.tables['FMT']['Name'] == table_name].index[0]
 
-            self.tables.pop(next_table, None)
+            self.tables.pop(table_name, None)
             self.tables['FMT'].drop(table_type, inplace=True)
             return table_type
         return -1
@@ -343,11 +350,7 @@ class DFLog(object):
         # find collisions
         format_table_names = {'FMT': 'Name',
                               'UNIT': 'Id', 'MULT': 'Id', 'FMTU': 'FmtType'}
-        merge_names = list(other.tables.keys())
-        collisions = [x for x in merge_names if x in self.tables ]
-        if drop_tables is None:
-            drop_tables = []
-        merge_names = [x for x in merge_names if x not in drop_tables and x not in format_table_names and x not in collisions]        
+               
         
 
         #drop tables from FMT of other that are in the drop tables list
@@ -357,7 +360,7 @@ class DFLog(object):
             print(table_name)
 
         #check for and correct any format type number collisions
-        self.renumber_merged_file_fmts(other)
+        self.renumber_merged_file_fmts(other, drop_tables)
 
         # We append the FMT, UNIT, MULT, and FMTU tables
         # We then drop duplicate unit, mult and fmtu messages (check on type fields)
@@ -365,6 +368,12 @@ class DFLog(object):
             if name in other.tables:
                 self.tables[name] = pd.concat([self.tables[name], other.tables[name]])
             self.tables[name] = self.tables[name].drop_duplicates(subset=[field])
+
+        merge_names = list(other.tables.keys())
+        collisions = [x for x in merge_names if x in self.tables ]
+        if drop_tables is None:
+            drop_tables = []
+        merge_names = [x for x in merge_names if x not in drop_tables and x not in format_table_names and x not in collisions] 
         
         # and insert the new message dataframes into tables
         if not gps_time_shift:

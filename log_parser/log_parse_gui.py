@@ -28,10 +28,10 @@ def loadFolder(folder):
     return (base_file, sync_file, other_files)
 
 
-def parse(base, sync, other, offset, auto_offset_enabled=True, bgu_current=18):
+def parse(base, sync, other, droppable, offset, auto_offset_enabled=True, bgu_current=18):
     if base is None:
         return None
-    log = DFLog(base)
+    log = DFLog(base, droppable_tables_filename=droppable)
     ts = offset
     if sync is not None:
         ips_log = DFLog(sync)
@@ -64,6 +64,11 @@ class LoadOtherDialog(FloatLayout):
     cancel = ObjectProperty(None)
     path = ObjectProperty(None)
 
+class LoadDroppableDialog(FloatLayout):
+    load = ObjectProperty(None)
+    cancel = ObjectProperty(None)
+    path = ObjectProperty(None)
+
 
 class LoadFolderDialog(FloatLayout):
     load = ObjectProperty(None)
@@ -85,6 +90,7 @@ class Root(FloatLayout):
     savefile = ObjectProperty(None)
     displayText = ObjectProperty("Select a folder to load files from before saving - no folder currently selected")
     text_input = ObjectProperty(None)
+    droppable_names = ObjectProperty(None)
 
     folder_path = ObjectProperty(Path(__file__).anchor)
 
@@ -123,6 +129,14 @@ class Root(FloatLayout):
                             size_hint=(0.9, 0.9))
         self._popup.open()
 
+    def show_load_droppable_names(self):
+        content = LoadDroppableDialog(load=self.load_droppable_names_file,
+                                   cancel=self.dismiss_popup,
+                                   path=self.folder_path)
+        self._popup = Popup(title="Select File with names of droppable messages", content=content,
+                            size_hint=(0.9, 0.9))
+        self._popup.open()
+
     def show_save(self):
         content = SaveDialog(save=self.save,
                              cancel=self.dismiss_popup,
@@ -156,6 +170,8 @@ class Root(FloatLayout):
             self.base, self.sync)
         otherText = '             {}\n'*len(self.other)
         self.displayText += otherText.format(*self.other)
+        if self.droppable_names is not None:
+            self.displayText += f'Drop Names File: {self.droppable_names}\n'
     
     def load_all_log_files(self, path):
         self.base = glob.glob(os.path.join(path, "*PIX.log"))[0]
@@ -168,6 +184,12 @@ class Root(FloatLayout):
         self.update_display()
         self.dismiss_popup()
 
+    def load_droppable_names_file(self, path, filename):
+        self.droppable_names = os.path.join(path, filename[0])
+        self.update_display()
+        self.dismiss_popup()
+
+
     def save(self, path, filename):
         self.displayText = "Processing..."
         self.dismiss_popup()
@@ -178,7 +200,7 @@ class Root(FloatLayout):
             pass
         print(offset)
         auto_offset = not bool(self.ids.disable_auto_offset.active)
-        log = parse(self.base, self.sync, self.other, offset, auto_offset_enabled = auto_offset)
+        log = parse(self.base, self.sync, self.other, self.droppable_names, offset, auto_offset_enabled = auto_offset)
         
         if log is not None:
             if filename == "":
@@ -200,6 +222,7 @@ Factory.register('LoadSyncDialog', cls=LoadSyncDialog)
 Factory.register('LoadOtherDialog', cls=LoadOtherDialog)
 Factory.register("LoadFolder", cls=LoadFolderDialog)
 Factory.register('SaveDialog', cls=SaveDialog)
+Factory.register('LoadDroppableDialog', cls=LoadDroppableDialog)
 
 def main():
     Editor().run()
