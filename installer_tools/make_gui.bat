@@ -2,7 +2,8 @@
 set base_dir="Y:\git\DFLogTool"
 set conda_home="C:\Users\Stranjyr\Anaconda3"
 call pyinstaller ^
-    HoverflyDataflashCombiner.spec
+    HoverflyDataflashCombiner.spec ^
+    --log-level WARN
 
     @REM --onefile ^
     @REM --name HoverflyDataflashCombiner ^

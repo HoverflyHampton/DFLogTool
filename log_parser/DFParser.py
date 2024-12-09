@@ -102,8 +102,8 @@ class DFLog(object):
     def _find_gps_zero(self):
         first_gps_time = gps2utc(
             int(self.tables['GPS']["GWk"].iloc[0]), 
-            int(self.tables['GPS']["GMS"].iloc[0]))
-        gps_ms_time = 0 #int(self.tables['GPS']['TimeUS'].iloc[0])/1000
+            int(self.tables['GPS']["GMS"].iloc[0])/1000.0)
+        gps_ms_time = int(self.tables['GPS']['TimeUS'].iloc[0])/1000
         return first_gps_time - datetime.timedelta(milliseconds=gps_ms_time)
 
 
@@ -380,8 +380,10 @@ class DFLog(object):
             self.gps_zero_time = other.gps_zero_time
             print(f'ts: {time_shift}')
         else:
+            print(f's.gps: {self.gps_zero_time} - o.gps: {other.gps_zero_time} = {self.gps_zero_time - other.gps_zero_time}')
             gps_zero_diff = self.gps_zero_time - other.gps_zero_time
             time_shift-=gps_zero_diff.total_seconds()
+            print(f'calc ts: {time_shift}')
         for name in merge_names:
             other.tables[name]['TimeUS'] = other.tables[name]['TimeUS'].astype(np.uint64) + int(time_shift*1e6)
             self.tables[name] = other.tables[name]
@@ -394,6 +396,7 @@ class DFLog(object):
             bgu_launch = other.tables['BGU1'][other.tables['BGU1']['CurrAll'].astype(float) >= bgu_current].iloc[0]
             craft_launch = self.tables['BAT'][self.tables['BAT']['Curr'].astype(float) >= 18].iloc[0]
             us_offset = int(craft_launch['TimeUS']) - int(bgu_launch['TimeUS'])
+            print(f'auto ts: {float(us_offset)/1e6}')
             return float(us_offset)/1e6
         except IndexError:
             # There was no valid spike for auto offset
