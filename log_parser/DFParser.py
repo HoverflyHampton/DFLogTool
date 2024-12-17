@@ -382,10 +382,26 @@ class DFLog(object):
         else:
             print(f's.gps: {self.gps_zero_time} - o.gps: {other.gps_zero_time} = {self.gps_zero_time - other.gps_zero_time}')
             gps_zero_diff = self.gps_zero_time - other.gps_zero_time
-            time_shift-=gps_zero_diff.total_seconds()
+            time_from_bgu = gps_zero_diff.total_seconds()
+            if time_shift > 0:
+                time_shift = time_shift-time_from_bgu
+            else:
+                time_shift = time_from_bgu
+            
             print(f'calc ts: {time_shift}')
+        
+        if time_shift > 0:
+            for name in merge_names:
+                if "TimeUS" in other.tables[name].columns:
+                    other.tables[name]['TimeUS'] = other.tables[name]['TimeUS'].astype(np.uint64) + int(time_shift*1e6)     
+        else:
+            my_tables = [t for t in self.tables if t not in format_table_names]
+            for name in my_tables:
+                print(name)
+                if "TimeUS" in self.tables[name].columns:
+                    self.tables[name]['TimeUS'] = self.tables[name]['TimeUS'].astype(np.uint64) - int(time_shift*1e6)
+
         for name in merge_names:
-            other.tables[name]['TimeUS'] = other.tables[name]['TimeUS'].astype(np.uint64) + int(time_shift*1e6)
             self.tables[name] = other.tables[name]
     
     def find_offset(self, other,  bgu_current=18):
