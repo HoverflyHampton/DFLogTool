@@ -408,7 +408,7 @@ class DFLog(object):
                     if ((self.tables[name]['TimeUS'].astype(np.int64) - int(time_shift*1e6)) < 0).any():
                         print(f"Negative: {name}")
                     else:
-                        self.tables[name]['TimeUS'] = self.tables[name]['TimeUS'].astype(np.uint64) - int(time_shift*1e6)
+                        self.tables[name]['TimeUS'] = self.tables[name]['TimeUS'].astype(np.uint64) + int(-time_shift*1e6)
 
         for name in merge_names:
             self.tables[name] = other.tables[name]
