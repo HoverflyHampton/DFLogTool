@@ -394,6 +394,7 @@ class DFLog(object):
             print("shifting other")
             for name in merge_names:
                 if "TimeUS" in other.tables[name].columns:
+                    print(name)
                     if ((other.tables[name]['TimeUS'].astype(np.int64) + int(time_shift*1e6)) < 0).any():
                         print(f"Negative: {name}")
                     else:
@@ -402,6 +403,7 @@ class DFLog(object):
             print("shifting base")
             my_tables = [t for t in self.tables if t not in format_table_names]
             for name in my_tables:
+                print(name)
                 if "TimeUS" in self.tables[name].columns:
                     if ((self.tables[name]['TimeUS'].astype(np.int64) - int(time_shift*1e6)) < 0).any():
                         print(f"Negative: {name}")
