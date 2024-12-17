@@ -399,7 +399,7 @@ class DFLog(object):
             for name in my_tables:
                 print(name)
                 if "TimeUS" in self.tables[name].columns:
-                    self.tables[name]['TimeUS'] = self.tables[name]['TimeUS'].astype(np.uint64) - int(time_shift*1e6)
+                    self.tables[name]['TimeUS'] = self.tables[name]['TimeUS'].astype(np.uint64) + int(-time_shift*1e6)
 
         for name in merge_names:
             self.tables[name] = other.tables[name]
